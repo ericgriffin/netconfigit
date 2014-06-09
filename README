@@ -1,0 +1,147 @@
+Netconfigit is released under the MIT license except as otherwise noted.
+
+Netconfigit is developed and maintained by Fluent Trade Technologies.
+
+
+Netconfigit is an extensible tool for performing configuration backups on a wide range of network devices. Configurations are pulled from devices through several available methods and committed to a GIT repository. Netconfigit reads an XML configuration file which describes among other things, the GIT repository, the network devices and their access credentials, and the actions to be performed on each device. 
+
+
+Running from the command-line
+
+Example typical usage:
+	# ./main.py -c config.xml -p masterpassword
+
+
+Example typical usage with verbose output:
+	# ./main.py -c config.xml -p masterpassword -v
+
+
+
+Configuration XML format
+
+This is the schema for the XML configuration file used by netconfigit:
+
+<netconfigit>
+
+    <logging path=[path] />
+    <passwords plaintext=[boolean] />
+
+    <repository path=[repo_path] password=[password] />
+    <transfer ip=[local_ip_address] username=[username] password=[password] chown=[username] local_tftp=[boolean] tftp_port=[port] />
+
+    <device name=[device name] type=[type] manufacturer=[manuracturer] enabled=[boolean] >
+        <access ip=[ip_address] type=[ssh|telnet] port=[port] username=[username] password=[password] enable=[enable-password] source=[source_ip]/>
+        <action type=[action_type] />
+        <action ... />
+        ...
+	</device>
+
+	<device ... >
+	...
+	</device>
+
+	...
+
+</netconfigit>
+
+
+
+Here is a breakdown of the XML elements and their associated attributes:
+
+
+<netconfigit>
+	-required
+
+<logging path=[path] />
+    -required
+    path 			- required, the full path to the log file.
+
+<passwords plaintext=[boolean] />
+	-optional
+	plaintext 		- optional, if this is set to "true" then all passwords in the config file will be interpreted as plaintext.
+					- default is "false" and all passwords are interpreted as ciphertext.
+
+<repository path=[path] password=[password] />
+	-required
+	path 			- required, the full path to the GIT repository.
+	password 		- required, the password needed to push to the origin repository.
+
+<transfer ip=[local_ip_address] username=[username] password=[password] chown=[username] local_tftp=boolean tftp_port=[port] />
+	-required
+	ip 				- required, the IP address used by the local tftp server (built-in) and the local SCP server (only used by certain devices and must be run separately).
+	username 		- required, the username used by the local SCP server (only used by certain devices and must be run separately).
+	password 		- required, the password for the local SCP server (only used by certain devices and must be run separately).
+	chown 			- optional, the username to whom the ownership of the transfered files should be assigned.
+					  This is only used by certain devices, particularly those who use SCP as the transfer method.
+	local_tftp 		- optional, default is "yes". Determines whether to spawn a local tftp server which is needed for transferring configurations from devices.
+	tftp_port 		- optional, default "69". The port onto which the built-in local tftp server is bound.
+
+<device name=[device name] type=[switch|router|...] manufacturer=[manuracturer] enabled=[boolean] >
+	-required
+	name 			- required, the name of the device. Should be unique.
+	type 			- required, the type of device (switch, router, etc.). Dependent on the types of devices supported.
+	manufacturer 	- required, the manufacturer of the device. Dependent on the types of devices supported.
+					  Currently supported manufacturers: cisco, fortinet, arista, dell, solace, H3G.
+	enabled         - required, "1" or "0", whether the device should be included when netconfigit is run.
+
+<access ip=[ip_address] type=[ssh|telnet] port=[port] username=[username] password=password enable=[enable-password] source=[source_ip] />
+	-required
+	ip 				- required, IP address (or hostname) of the device.
+	type 			- required, method of access. Currently supported methods are "ssh" and "telnet".
+	port   			- required, the port used by the access method specified (ie. "22" for SSH).
+	username		- required, a valid username for the access type
+	password 		- required, a valid password for the access type
+	enable 			- optional, if specified, the device is issued an "enable" command with the password specified as the value of this attribute.
+					  If the value is set to "", then the enable command is given without requiring a password.
+	source  		- optional, the IP address of the machine that should run the actions for this particular device.
+					  If the machine currently running netconfigit does not match this field then this device is skipped.
+					  This can be useful if netconfigit needs to be run in several locations due to lack of connectivity to certain devices from certain locations.
+					  It allows multiple machines running netconfit to share the same configuration file without incurring errors or duplicating efforts.
+
+<action type=[action_type] />
+	-optional
+	type  			- the "action" to run. This is dependent and specific to each manufacturer and type of device.
+					- example: for Cisco devices currently two actions are defined: "running-config" and "startup-config".
+
+
+
+Encrypted Passwords
+
+ By default all passwords in an XML configuration file must be encrypted ciphertext, as they are decrypted with the command-line password parameter at run-time. Passwords in the configuration file must be encoded in 128-bit AES ciphertext. Defining the XML element "<passwords plaintext="true" />" allows the use of plaintext passwords, though a dummy-password must still be given as a command-line parameter. Netconfigit includes command-line switches to help generate and decode ciphertext passwords.
+
+
+Convert plaintext password to ciphertext:
+	# ./main.py -p encryptionpassword -e plaintextpassword1
+
+	Encrypted form of "plaintextpassword1" is:
+	2BLom7pxTAsev/D/YaDH+fHqQXAQm51xK4+H9QXOOQ0=
+
+
+Convert ciphertext password back to plaintext:
+	# ./main.py -p encryptionpassword -d 2BLom7pxTAsev/D/YaDH+fHqQXAQm51xK4+H9QXOOQ0=
+
+	Decrypted form of "2BLom7pxTAsev/D/YaDH+fHqQXAQm51xK4+H9QXOOQ0=" is:
+	plaintextpassword1
+
+
+
+Example XML Configuration
+
+<netconfigit>
+
+    <logging path="./netconfigit.log"/>
+    <repository path="/var/local/netconfigit/networkconfigs/" password="Bf3Dn0r3fl56iEDR5gPkln==" />
+    <transfer ip="192.168.1.100" username="netconfigit" password="Bf3Dn0r3fl56iEDR5gPkln==" local_tftp="yes" tftp_port="69" />
+
+    <device name="CiscoRouter" type="router" manufacturer="cisco" enabled="1">
+        <access ip="192.168.1.1" type="ssh" port="22" username="admin" password="Bf3Dn0r3fl56iEDR5gPkln==" enable="Bf3Dn0r3fl56iEDR5gPkln==" />
+        <action type="running-config" />
+        <action type="startup-config" />
+	</device>
+
+	<device name="SolaceRouter1" type="router" manufacturer="solace" enabled="1">
+		<access ip="192.168.1.2" type="ssh" port="22" username="admin" password="Bf3Dn0r3fl56iEDR5gPkln==" />
+		<action type="current-config" />
+	</device>
+
+</netconfigit>
