@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+Netconfigit Solace device class
+"""
+
+__license__ = "MIT License"
+__author__ = "Eric Griffin"
+__copyright__ = "Copyright (C) 2014, Fluent Trade Technologies"
+__version__ = "1.1"
+
+
 import logging
 import os
 import time
@@ -5,12 +16,15 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class solace:
+class solace(object):
+
     def __init__(self, _device, _netconfigit):
         self.device = _device
         self.netconfigit = _netconfigit
 
-        self.command_copy_current = "copy current-config scp://" + self.netconfigit.scp_username + "@" + self.netconfigit.scp_ip + "/" + self.netconfigit.repo_path + self.device.name + "/current-config\n"
+        self.command_copy_current = "copy current-config scp://" + self.netconfigit.scp_username + "@" + \
+                                    self.netconfigit.transfer_ip + "/" + self.netconfigit.repo_path + \
+                                    self.device.name + "/current-config\n"
 
 
     def run_action(self, action):
@@ -32,8 +46,6 @@ class solace:
 
     def get_config(self):
         output = ""
-        # create the device directory
-        self.netconfigit.create_device_directory(self.device)
 
         time.sleep(10)
         if self.device.enable_password != "NULL":

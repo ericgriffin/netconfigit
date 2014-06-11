@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+Netconfigit Dell device class
+"""
+
+__license__ = "MIT License"
+__author__ = "Eric Griffin"
+__copyright__ = "Copyright (C) 2014, Fluent Trade Technologies"
+__version__ = "1.1"
+
+
 import logging
 import os
 import time
@@ -5,14 +16,16 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class dell:
+class dell(object):
 
     def __init__(self, _device, _netconfigit):
         self.device = _device
         self.netconfigit = _netconfigit
 
-        self.command_copy_startup = "copy startup-config tftp://" + self.netconfigit.tftp_ip + "/" + self.device.name + "/startup-config\n"
-        self.command_copy_running = "copy running-config tftp://" + self.netconfigit.tftp_ip + "/" + self.device.name + "/running-config\n"
+        self.command_copy_startup = "copy startup-config tftp://" + self.netconfigit.transfer_ip + \
+                                    "/" + self.device.name + "/startup-config\n"
+        self.command_copy_running = "copy running-config tftp://" + self.netconfigit.transfer_ip + \
+                                    "/" + self.device.name + "/running-config\n"
 
 
     def run_action(self, action):
@@ -37,8 +50,6 @@ class dell:
 
     def get_config(self, config_type):
         output = ""
-        # create the device directory
-        self.netconfigit.create_device_directory(self.device)
 
         time.sleep(5)
         if self.device.enable_password != "NULL":

@@ -1,7 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/python
+"""
+Netconfigit
 
-# netconfigit
-# network device configuration archiver
+Network device configuration archive tool
+Copyright (C) 2014 Fluent Trade Technologies
+"""
+
+__license__ = "MIT License"
+__author__ = "Eric Griffin"
+__copyright__ = "Copyright (C) 2014, Fluent Trade Technologies"
+__version__ = "1.1"
+
 
 import sys
 import os.path
@@ -14,7 +23,6 @@ import paramiko
 
 from modules import netconfigit
 from modules import aescrypt
-
 
 # define a global logger
 logger = logging.getLogger(__name__)
@@ -41,8 +49,13 @@ def usage(error):
     exit(0)
 
 
-# main entry point
-if __name__ == "__main__":
+def main():
+    """Main application function
+
+    Validates command-line options
+    Creates Netconfigit object with specified configuration file
+    Runs Netconfigit object
+    """
     signal.signal(signal.SIGINT, signal_handler)
 
     # global variables
@@ -69,18 +82,18 @@ if __name__ == "__main__":
         elif o == '-e':     # encrypt plaintext password given on command-line
             if password == "":
                 usage("Encryption password needs to be specified with -p [password]\n")
-            input = a
-            password = aescrypt.aescrypt(password)
-            encoded = password.encode(input)
-            print "\nEncrypted form of \"" + input + "\" is:\n" + encoded
+            pass_input = a
+            password = aescrypt.AESCrypt(password)
+            encoded = password.encode(pass_input)
+            print "\nEncrypted form of \"" + pass_input + "\" is:\n" + encoded
             exit(0)
         elif o == '-d':     # decrypt ciphertext password given on command-line
             if password == "":
                 usage("Encryption password needs to be specified with -p [password]\n")
-            input = a
-            password = aescrypt.aescrypt(password)
-            decoded = password.decode(input)
-            usage("\nDecrypted form of \"" + input + "\" is:\n" + decoded)
+            pass_input = a
+            password = aescrypt.AESCrypt(password)
+            decoded = password.decode(pass_input)
+            usage("\nDecrypted form of \"" + pass_input + "\" is:\n" + decoded)
         else:
             assert False, "unhandled option"
 
@@ -94,32 +107,37 @@ if __name__ == "__main__":
 
     # create the neconfigit object
     # the specified configuration file is parsed at this point
-    nc = netconfigit.netconfigit(configuration, password)
+    net_config_git = netconfigit.Netconfigit(configuration, password)
 
     # set logging options
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler = logging.FileHandler(nc.logfile)
+    handler = logging.FileHandler(net_config_git.logfile)
     handler.setLevel(logging.INFO)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
     # set verbosity
     if verbose == 1:
-        nc.verbose = 1
-        paramiko.util.log_to_file(os.path.splitext(nc.logfile)[0] + '_transport.log')
+        net_config_git.verbose = 1
+        paramiko.util.log_to_file(os.path.splitext(net_config_git.logfile)[0] + '_transport.log')
 
-    # run the netconfigit object
+    # run the Netconfigit object
     # this initiates the running of the actions specified for each device
-    nc.run_nc()
+    net_config_git.run_nc()
 
     # here you have the option to do something while the device action threads are running
-    while nc.device_threadpool.tasks.unfinished_tasks > 0:
+    while net_config_git.device_threadpool.tasks.unfinished_tasks > 0:
         working = 1
 
-    # initiates the clean-up of the netconfigit run
+    # initiates the clean-up of the Netconfigit run
     # waits for all threads to finish and moves config files
-    nc.stop_nc()
+    net_config_git.stop_nc()
 
     # if repository directory is a git repo, perform a commit/pull/push to synchronize everything
-    if nc.using_git == 1:
-        nc.git_commit_push(nc.repository)
+    if net_config_git.using_git == 1:
+        net_config_git.git_commit_push()
+
+
+# application entry point
+if __name__ == "__main__":
+    main()
