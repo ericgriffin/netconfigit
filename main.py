@@ -124,10 +124,6 @@ def main():
     # this initiates the running of the actions specified for each device
     net_config_git.run_nc()
 
-    # here you have the option to do something while the device action threads are running
-    while net_config_git.device_threadpool.tasks.unfinished_tasks > 0:
-        working = 1
-
     # initiates the clean-up of the Netconfigit run
     # waits for all threads to finish and moves config files
     net_config_git.stop_nc()
