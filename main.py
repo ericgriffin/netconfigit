@@ -67,8 +67,7 @@ def main():
     # define command-line flags
     try:
         opts, args = getopt.getopt(sys.argv[1:], "c:p:ve:d:")
-    except getopt.GetoptError as e:
-        print (str(e))
+    except:
         usage("")
 
     # determine which flags were called and assign parameters
