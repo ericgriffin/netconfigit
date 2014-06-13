@@ -45,24 +45,43 @@ class H3C(object):
         Returns 0/1 for fail/success of the action
         :param action: the action to run
         """
+        status = 0
+        connected = 0
+
         if self.device.access_type == "telnet":
             try:
                 self.client = telnetlib.Telnet(self.device.ip)
+                connected = 1
             except:
-                logger.error("Error connecting to " + self.device.name + "\n")
+                logger.error("Error connecting to " + self.device.name)
 
-            if action == "startup-config":
-                self.get_config("startup-config")
-            else:
-                logger.error("Action " + action + " not implemented for H3C devices.\n")
-
-            self.client.close()
+            if connected == 1:
+                if action == "running-config":
+                    status = self.get_config("running-config")
+                elif action == "startup-config":
+                    status = self.get_config("startup-config")
+                else:
+                    logger.error("Action " + action + " not implemented for " +
+                                 self.device.manufacturer.title() + " devices.")
+                self.client.close()
         else:
-            logger.error("Access method " + self.device.access_type + " not implemented for H3C devices.\n")
+            logger.error("Access method " + self.device.access_type + " not implemented for " +
+                         self.device.manufacturer.title() + " devices.")
 
+        if status == 1:
+            self.netconfigit.success_list.append({self.device.name: action})
+        if status == 0:
+            self.netconfigit.failure_list.append({self.device.name: action})
 
     def get_config(self, config_type):
+        """Transfers configurations from device via ssh and tftp
+
+        Issues commands to device via ssh to transfer configs to local tftp server
+        :param config_type: the configuration type (ie. startup-config, running-config)
+        :return: boolean, 0 means transfer failed, 1 means transfer was successful
+        """
         output = ""
+        success = 0
 
         self.client.read_until('Username:')
         self.client.write(self.device.login_user + "\r")
@@ -72,6 +91,12 @@ class H3C(object):
         p = self.client.read_eager()
         print p.decode("utf-16")
 
-
         output = self.client.read_all().decode("utf-16")
         #print output
+
+        if "bytes copied" in output:
+            success = 1
+        if "Error" in output:
+            success = 0
+
+        return success

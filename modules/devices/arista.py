@@ -11,6 +11,7 @@ __version__ = "1.1"
 
 import logging
 import os
+import re
 import time
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -54,7 +55,6 @@ class Arista(object):
                 connected = 1
             except:
                 logger.error("Error connecting to " + self.device.name)
-                status = 0
 
             if connected == 1:
                 if action == "running-config":
@@ -64,12 +64,10 @@ class Arista(object):
                 else:
                     logger.error("Action " + action + " not implemented for " +
                                  self.device.manufacturer.title() + " devices.")
-                    status = 0
                 self.client.close()
         else:
             logger.error("Access method " + self.device.access_type + " not implemented for " +
                          self.device.manufacturer.title() + " devices.")
-            status = 0
 
         if status == 1:
             self.netconfigit.success_list.append({self.device.name: action})
@@ -77,8 +75,15 @@ class Arista(object):
             self.netconfigit.failure_list.append({self.device.name: action})
 
     def get_config(self, config_type):
+        """Transfers configurations from device via ssh and tftp
+
+        Issues commands to device via ssh to transfer configs to local tftp server
+        :param config_type: the configuration type (ie. startup-config, running-config)
+        :return: boolean, 0 means transfer failed, 1 means transfer was successful
+        """
         output = ""
         success = 0
+        transfer_pattern = re.compile('[1-9][0-9]*\s.[1-9][0-9]*\s*.[0]\s*.[0]\s*.[1-9][0-9]*\s.[1-9][0-9]*')
 
         time.sleep(5)
         if self.device.enable_password != "NULL":
@@ -101,6 +106,8 @@ class Arista(object):
             print output
 
         if "Copy completed successfully" in output:
+            success = 1
+        if transfer_pattern.search(output) is not None:
             success = 1
         if "Error" in output:
             success = 0

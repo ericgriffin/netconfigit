@@ -44,24 +44,41 @@ class Solace(object):
         Returns 0/1 for fail/success of the action
         :param action: the action to run
         """
+        status = 0
+        connected = 0
+
         if self.device.access_type == "ssh":
             try:
                 self.client, self.channel = self.netconfigit.get_ssh_client_channel(self.device)
+                connected = 1
             except:
-                logger.error("Error connecting to " + self.device.name + "\n")
+                logger.error("Error connecting to " + self.device.name)
 
-            if action == "current-config":
-                self.get_config()
-            else:
-                logger.error("Action " + action + " not implemented for Solace devices.\n")
-
-            self.client.close()
+            if connected == 1:
+                if action == "current-config":
+                    status = self.get_config()
+                else:
+                    logger.error("Action " + action + " not implemented for " +
+                                 self.device.manufacturer.title() + " devices.")
+                self.client.close()
         else:
-            logger.error("Access method " + self.device.access_type + " not implemented for Solace devices.\n")
+            logger.error("Access method " + self.device.access_type + " not implemented for " +
+                         self.device.manufacturer.title() + " devices.")
 
+        if status == 1:
+            self.netconfigit.success_list.append({self.device.name: action})
+        if status == 0:
+            self.netconfigit.failure_list.append({self.device.name: action})
 
     def get_config(self):
+        """Transfers configurations from device via ssh and scp
+
+        Issues commands to device via ssh to transfer configs to local scp server
+        :param config_type: the configuration type (ie. startup-config, running-config)
+        :return: boolean, 0 means transfer failed, 1 means transfer was successful
+        """
         output = ""
+        success = 0
 
         time.sleep(10)
         if self.device.enable_password != "NULL":
@@ -84,4 +101,9 @@ class Solace(object):
         if self.netconfigit.verbose == 1:
             print output
 
-        return 1
+        if "bytes copied" in output:
+            success = 1
+        if "Error" in output:
+            success = 0
+
+        return success

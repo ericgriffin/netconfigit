@@ -54,7 +54,6 @@ class Dell(object):
                 connected = 1
             except:
                 logger.error("Error connecting to " + self.device.name)
-                status = 0
 
             if connected == 1:
                 if action == "running-config":
@@ -64,12 +63,10 @@ class Dell(object):
                 else:
                     logger.error("Action " + action + " not implemented for " +
                                  self.device.manufacturer.title() + " devices.")
-                    status = 0
                 self.client.close()
         else:
             logger.error("Access method " + self.device.access_type + " not implemented for " +
                          self.device.manufacturer.title() + " devices.")
-            status = 0
 
         if status == 1:
             self.netconfigit.success_list.append({self.device.name: action})
@@ -77,6 +74,12 @@ class Dell(object):
             self.netconfigit.failure_list.append({self.device.name: action})
 
     def get_config(self, config_type):
+        """Transfers configurations from device via ssh and tftp
+
+        Issues commands to device via ssh to transfer configs to local tftp server
+        :param config_type: the configuration type (ie. startup-config, running-config)
+        :return: boolean, 0 means transfer failed, 1 means transfer was successful
+        """
         output = ""
         success = 0
 
@@ -95,7 +98,7 @@ class Dell(object):
         elif config_type == "running-config":
             self.channel.send(self.command_copy_running)
         while not self.channel.recv_ready():
-            time.sleep(5)
+            time.sleep(10)
         output += self.channel.recv(1024)
         if self.netconfigit.verbose == 1:
             print output

@@ -68,7 +68,7 @@ class Cisco(object):
                 self.client.close()
         else:
             logger.error("Access method " + self.device.access_type + " not implemented for " +
-                         self.device.manufacturer.title() + " devices.")
+                         self.device.manufacturer.title() + " devices.\n")
             status = 0
 
         if status == 1:
@@ -77,6 +77,12 @@ class Cisco(object):
             self.netconfigit.failure_list.append({self.device.name: action})
 
     def get_config(self, config_type):
+        """Transfers configurations from device via ssh and tftp
+
+        Issues commands to device via ssh to transfer configs to local tftp server
+        :param config_type: the configuration type (ie. startup-config, running-config)
+        :return: boolean, 0 means transfer failed, 1 means transfer was successful
+        """
         output = ""
         success = 0
 
