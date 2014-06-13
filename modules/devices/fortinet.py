@@ -43,24 +43,38 @@ class Fortinet(object):
         Returns 0/1 for fail/success of the action
         :param action: the action to run
         """
+        status = 0
+        connected = 0
+
         if self.device.access_type == "ssh":
             try:
                 self.client, self.channel = self.netconfigit.get_ssh_client_channel(self.device)
+                connected = 1
             except:
-                logger.error("Error connecting to " + self.device.name + "\n")
+                logger.error("Error connecting to " + self.device.name)
+                status = 0
 
-            if action == "current-config":
-                self.get_config()
-            else:
-                logger.error("Action " + action + " not implemented for Fortinet devices.\n")
-
-            self.client.close()
+            if connected == 1:
+                if action == "current-config":
+                    status = self.get_config()
+                else:
+                    logger.error("Action " + action + " not implemented for " +
+                                 self.device.manufacturer.title() + " devices.")
+                    status = 0
+                self.client.close()
         else:
-            logger.error("Access method " + self.device.access_type + " not implemented for Fortinet devices.\n")
+            logger.error("Access method " + self.device.access_type + " not implemented for " +
+                         self.device.manufacturer.title() + " devices.")
+            status = 0
 
+        if status == 1:
+            self.netconfigit.success_list.append({self.device.name: action})
+        if status == 0:
+            self.netconfigit.failure_list.append({self.device.name: action})
 
     def get_config(self):
         output = ""
+        success = 0
 
         time.sleep(5)
         self.channel.send(self.command_copy_current)
@@ -74,4 +88,9 @@ class Fortinet(object):
         if self.netconfigit.verbose == 1:
             print output
 
-        return 1
+        if "Send config file to tftp server OK" in output:
+            success = 1
+        if "Error" in output:
+            success = 0
+
+        return success

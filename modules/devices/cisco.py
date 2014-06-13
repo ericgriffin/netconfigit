@@ -53,7 +53,7 @@ class Cisco(object):
                 self.client, self.channel = self.netconfigit.get_ssh_client_channel(self.device)
                 connected = 1
             except:
-                logger.error("Error connecting to " + self.device.name + "\n")
+                logger.error("Error connecting to " + self.device.name)
                 status = 0
 
             if connected == 1:
@@ -62,11 +62,13 @@ class Cisco(object):
                 elif action == "startup-config":
                     status = self.get_config("startup-config")
                 else:
-                    logger.error("Action " + action + " not implemented for Cisco devices.\n")
+                    logger.error("Action " + action + " not implemented for " +
+                                 self.device.manufacturer.title() + " devices.")
                     status = 0
                 self.client.close()
         else:
-            logger.error("Access method " + self.device.access_type + " not implemented for Cisco devices.\n")
+            logger.error("Access method " + self.device.access_type + " not implemented for " +
+                         self.device.manufacturer.title() + " devices.")
             status = 0
 
         if status == 1:

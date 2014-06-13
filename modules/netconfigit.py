@@ -389,10 +389,6 @@ class Netconfigit(object):
                 logger.warning("Must specify either an IP address or hostname for device %s", str(device.name))
                 err = "Must specify either an IP address or hostname for device " + str(device.name)
                 continue
-            if device.access_type != "ssh" and device.access_type != "telnet":
-                logger.warning("Unsupported access type for device %s", str(device.name))
-                err = "Unsupported access type for device " + str(device.name)
-                continue
             if device.login_user == "NULL" or device.login_pass == "NULL":
                 logger.warning("Must supply username and password for device %s", str(device.name))
                 err = "Must supply username and password for device " + str(device.name)
