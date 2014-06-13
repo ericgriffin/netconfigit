@@ -27,29 +27,39 @@ class cisco(object):
         self.command_copy_running = "copy running-config tftp://" + self.netconfigit.transfer_ip + \
                                     "/" + self.device.name + "/running-config\n"
 
-
     def run_action(self, action):
+        status = None
+        connected = 0
 
         if self.device.access_type == "ssh":
             try:
                 self.client, self.channel = self.netconfigit.get_ssh_client_channel(self.device)
+                connected = 1
             except:
                 logger.error("Error connecting to " + self.device.name + "\n")
+                status = 0
 
-            if action == "running-config":
-                self.get_config("running-config")
-            elif action == "startup-config":
-                self.get_config("startup-config")
-            else:
-                logger.error("Action " + action + " not implemented for Cisco devices.\n")
-
-            self.client.close()
+            if connected == 1:
+                if action == "running-config":
+                    status = self.get_config("running-config")
+                elif action == "startup-config":
+                    status = self.get_config("startup-config")
+                else:
+                    logger.error("Action " + action + " not implemented for Cisco devices.\n")
+                    status = 0
+                self.client.close()
         else:
             logger.error("Access method " + self.device.access_type + " not implemented for Cisco devices.\n")
+            status = 0
 
+        if status == 1:
+            self.netconfigit.success_list.append({self.device.name: action})
+        if status == 0:
+            self.netconfigit.failure_list.append({self.device.name: action})
 
     def get_config(self, config_type):
         output = ""
+        success = -1
 
         time.sleep(5)
         if self.device.enable_password != "NULL":
@@ -83,5 +93,10 @@ class cisco(object):
         if self.netconfigit.verbose == 1:
             print output
 
-        return 1
+        if "bytes copied" in output:
+            success = 1
+        if "Error" in output:
+            success = 0
+
+        return success
 

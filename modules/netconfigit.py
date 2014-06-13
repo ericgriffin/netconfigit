@@ -19,6 +19,7 @@ import inspect
 import threading
 import telnetlib
 from xml.dom import minidom
+from datetime import datetime
 
 import paramiko
 from git import *
@@ -57,6 +58,8 @@ class Netconfigit(object):
         # initialize member variables
         self.device_list = []               # list of device objects defined in the configuration file
         self.device_count = 0               # the number of devices defined in the configuration file
+        self.success_list = []              # the list of device actions that have succeeded
+        self.failure_list = []                 # the list of device actions that have failed
         self.config = 0                     # the minidom XML configuration data structure
         self.config_devices = 0             # pointer to the device elements in the config minidom structure
         self.tftp_thread = 0                # thread pool for running the local tftp server
@@ -72,11 +75,17 @@ class Netconfigit(object):
         self.ssh_port = 22                  # port used to ssh to local machine - used by chown
         self.repo_path = ""                 # absolute path to the configuration repository
         self.repo_password = ""             # password for accessing the repository
-        self.repository = None            # GitPython repository object
+        self.repository = None              # GitPython repository object
         self.tftp_port = "69"               # port used by local tftp server
         self.tftp_root = ""                 # root directory used by local tftp server
         self.using_git = 0                  # boolean is set to true if the repository directory is a Git repository
         self.tempdir = ".netconfigit/"      # temporary path for downloading configs
+        self.time_start = datetime.now()    # starting time timestamp used for calculating total running-time
+        self.time_stop = None               # stopping time timestamp used for calculating total running-time
+        self.time_timestamp = time.time()               # starting time timestamp
+
+        # formatted timestamp
+        self.timestamp = datetime.fromtimestamp(self.time_timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
         # create the object used for encrypting/decrypting passwords
         self.password = aescrypt.AESCrypt(_password)
@@ -161,6 +170,44 @@ class Netconfigit(object):
             # wait a few seconds and try again if the OS hasn't released a lock on the folders
             time.sleep(5)
             shutil.rmtree(self.tempdir)
+
+        # Calculate total running-time
+        self.time_stop = datetime.now()
+        running_time = self.time_stop - self.time_start
+
+        # print results and write them to log file
+        with open(self.logfile, "a") as results:
+            # print a timestamp and total running time
+            results.write("\n-------------------------\n\n")
+            print "-------------------------\n"
+            print self.timestamp
+            results.write(self.timestamp + "\n")
+            print "Running time: " + str(running_time)
+            results.write("Running Time: " + str(running_time) + "\n\n")
+
+            # completed actions
+            print "\nCompleted:"
+            results.write("Completed:\n")
+            if len(self.success_list) == 0:
+                print "\tNONE"
+                results.write("\tNONE\n")
+            else:
+                for success in self.success_list:
+                    for success_device, success_action in success.items():
+                        print "\t" + success_device + " - " + success_action
+                        results.write("\t" + success_device + " - " + success_action + "\n")
+
+            # failed actions
+            print "\nFailed:"
+            results.write("\nFailed:\n")
+            if len(self.failure_list) == 0:
+                print "\tNONE"
+                results.write("\tNONE\n")
+            else:
+                for failure in self.failure_list:
+                    for failure_device, failure_action in failure.items():
+                        print "\t" + failure_device + " - " + failure_action
+                        results.write("\t" + failure_device + " - " + failure_action + "\n")
 
     def load_options(self):
         """Loads options from the XML configuration tree
