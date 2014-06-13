@@ -17,16 +17,32 @@ logger.setLevel(logging.INFO)
 
 
 class fortinet(object):
+    """Fortinet device class
+
+    Defines and runs device-specific actions on a device
+    :param _device: the device
+    :param _netconfigit: the netconfigit object containing the configuration
+    """
 
     def __init__(self, _device, _netconfigit):
+        """Defines action commands for the device associated with the class
+
+        :param _device: the device on which actions are being run
+        :param _netconfigit: the netconfigit object containing the configuration
+        """
         self.device = _device
         self.netconfigit = _netconfigit
 
         self.command_copy_current = "exec backup config tftp " + self.device.name + "/current-config " \
                                     + self.netconfigit.transfer_ip + "\n"
 
-
     def run_action(self, action):
+        """Defines and runs actions for the device associated with the class
+
+        Checks for valid action names and runs the actions
+        Returns 0/1 for fail/success of the action
+        :param action: the action to run
+        """
         if self.device.access_type == "ssh":
             try:
                 self.client, self.channel = self.netconfigit.get_ssh_client_channel(self.device)

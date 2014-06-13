@@ -182,8 +182,8 @@ class Netconfigit(object):
             print "-------------------------\n"
             print self.timestamp
             results.write(self.timestamp + "\n")
-            print "Running time: " + str(running_time)
-            results.write("Running Time: " + str(running_time) + "\n\n")
+            print "Elapsed time: " + str(running_time)
+            results.write("Elapsed Time: " + str(running_time) + "\n\n")
 
             # completed actions
             print "\nCompleted:"
