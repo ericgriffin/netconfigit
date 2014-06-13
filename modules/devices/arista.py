@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class arista(object):
+class Arista(object):
     """Arista device class
 
     Defines and runs device-specific actions on a device

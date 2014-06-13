@@ -502,13 +502,13 @@ class Netconfigit(object):
             sys.path.insert(0, cmd_subfolder)
 
         # load the manufacturer module dynamically
-        device_class = _device.manufacturer
+        device_class = _device.manufacturer.title()
         try:
-            dynamic_module = __import__(device_class)
+            dynamic_module = __import__(device_class.lower())
             # create an object of the manufacturer class dynamically
             manufacturer_init = getattr(dynamic_module, device_class)(_device, self)
         except:
-            print "Device manufacturer " + _device.manufacturer + " not implemented."
+            print "Device manufacturer " + device_class + " not implemented."
             err = 1
 
         if err == 0:

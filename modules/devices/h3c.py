@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class h3c(object):
+class H3C(object):
     """H3C device class
 
     Defines and runs device-specific actions on a device

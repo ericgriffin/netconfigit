@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class cisco(object):
+class Cisco(object):
     """Cisco device class
 
     Defines and runs device-specific actions on a device

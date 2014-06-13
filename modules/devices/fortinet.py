@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class fortinet(object):
+class Fortinet(object):
     """Fortinet device class
 
     Defines and runs device-specific actions on a device

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class solace(object):
+class Solace(object):
     """Solace Systems device class
 
     Defines and runs device-specific actions on a device
