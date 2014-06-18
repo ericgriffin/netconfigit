@@ -385,7 +385,7 @@ class Netconfigit(object):
             if device.manufacturer == "NULL":
                 logger.warning("Must specify device manufacturer for device %s", str(device.name))
                 err = "Must specify device manufacturer for device " + str(device.name)
-            if device.ip == "NULL" == "NULL":
+            if device.ip == "NULL":
                 logger.warning("Must specify either an IP address or hostname for device %s", str(device.name))
                 err = "Must specify either an IP address or hostname for device " + str(device.name)
                 continue
