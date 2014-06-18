@@ -201,7 +201,7 @@ class Netconfigit(object):
             print "\nFailed:"
             results.write("\nFailed:\n")
             if len(self.failure_list) == 0:
-                print "\tNONE"
+                print "\tNONE\n"
                 results.write("\tNONE\n")
             else:
                 for failure in self.failure_list:

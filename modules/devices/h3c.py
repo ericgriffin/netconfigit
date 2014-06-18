@@ -12,6 +12,7 @@ __version__ = "1.1"
 import logging
 import os
 import time
+import shutil
 import telnetlib
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -33,10 +34,8 @@ class H3C(object):
         """
         self.device = _device
         self.netconfigit = _netconfigit
-        self.command_copy_startup = "copy startup-config tftp://" + self.netconfigit.transfer_ip + \
-                                    "/" + self.device.name + "/startup-config\n"
-        self.command_copy_running = "copy running-config tftp://" + self.netconfigit.transfer_ip + \
-                                    "/" + self.device.name + "/running-config\n"
+        self.command_copy_startup = "backup startup-configuration to " + self.netconfigit.transfer_ip + \
+                                    " " + self.device.name + ".cfg\n"
 
     def run_action(self, action):
         """Defines and runs actions for the device associated with the class
@@ -56,10 +55,8 @@ class H3C(object):
                 logger.error("Error connecting to " + self.device.name)
 
             if connected == 1:
-                if action == "running-config":
-                    status = self.get_config("running-config")
-                elif action == "startup-config":
-                    status = self.get_config("startup-config")
+                if action == "startup-config":
+                    status = self.get_config_telnet()
                 else:
                     logger.error("Action " + action + " not implemented for " +
                                  self.device.manufacturer.title() + " devices.")
@@ -73,30 +70,41 @@ class H3C(object):
         if status == 0:
             self.netconfigit.failure_list.append({self.device.name: action})
 
-    def get_config(self, config_type):
-        """Transfers configurations from device via ssh and tftp
+    def get_config_telnet(self):
+        """Transfers configurations from device via telnet and tftp
 
-        Issues commands to device via ssh to transfer configs to local tftp server
-        :param config_type: the configuration type (ie. startup-config, running-config)
+        Issues commands to device via telnet to transfer configs to local tftp server
         :return: boolean, 0 means transfer failed, 1 means transfer was successful
         """
         output = ""
         success = 0
-
+        self.client.write("vt100".encode('ascii') + "\n\r".encode('ascii'))
         self.client.read_until('Username:')
-        self.client.write(self.device.login_user + "\r")
+        self.client.write(self.device.login_user.encode('ascii') + "\n\r".encode('ascii'))
         self.client.read_until("Password:")
-        self.client.write(self.device.login_pass + "\n")
-        self.client.write("\r")
-        p = self.client.read_eager()
-        print p.decode("utf-16")
+        self.client.write(self.device.login_pass.encode('ascii') + "\n\r".encode('ascii'))
+        self.client.read_until(">")
+        self.client.write(self.command_copy_startup.encode('ascii'))
+        self.client.write("quit\n\r".encode('ascii'))
+        output = self.client.read_all()
 
-        output = self.client.read_all().decode("utf-16")
-        #print output
+        if self.netconfigit.verbose == 1:
+            print output
 
-        if "bytes copied" in output:
+        if "finished!" in output:
             success = 1
-        if "Error" in output:
+            # H3C can't specify directory for tftp download
+            # move the downloaded file to the named subdirectory in the temporary directory
+            dst_dir = self.netconfigit.tempdir + "/" + self.device.name
+            src_file = dst_dir + ".cfg"
+            dst_file = dst_dir + "/" + "startup-configuration.cfg"
+            # make the named subfolder if it doesn't exist
+            if not os.path.exists(dst_dir):
+                os.mkdir(dst_dir)
+            # rename and move the downloaded file from the temporary directory root to the named subfolder
+            shutil.move(src_file, dst_dir)
+            os.rename(dst_dir + "/" + self.device.name + ".cfg", dst_file)
+        else:
             success = 0
 
         return success
