@@ -35,6 +35,7 @@ class Fortinet(object):
 
         self.command_copy_current = "exec backup config tftp " + self.device.name + "/current-config " \
                                     + self.netconfigit.transfer_ip + "\n"
+        self.command_clear_dhcp_leases = "execute dhcp lease-clear all" + "\n"
 
     def run_action(self, action):
         """Defines and runs actions for the device associated with the class
@@ -56,6 +57,8 @@ class Fortinet(object):
             if connected == 1:
                 if action == "current-config":
                     status = self.get_config()
+                elif action == "clear-dhcp-leases":
+                    status = self.clear_dhcp_leases()
                 else:
                     logger.error("Action " + action + " not implemented for " +
                                  self.device.manufacturer.title() + " devices.")
@@ -96,4 +99,21 @@ class Fortinet(object):
         if "Error" in output:
             success = 0
 
+        return success
+
+
+    def clear_dhcp_leases(self):
+        """Clears all DHCP leases
+        :return: boolean, 0 means failure, 1 means success
+        """
+        output = ""
+        success = 0
+        time.sleep(5)
+        self.channel.send(self.command_clear_dhcp_leases)
+        while not self.channel.recv_ready():
+            time.sleep(5)
+        output += self.channel.recv(1024)
+        self.channel.send("\n")
+        # there is no  output for this command so success is always true
+        success = 1
         return success
