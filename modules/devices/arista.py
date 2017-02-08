@@ -91,6 +91,7 @@ class Arista(object):
             while not self.channel.recv_ready():
                 time.sleep(5)
             output += self.channel.recv(1024)
+            time.sleep(3)
             self.channel.send(self.device.enable_password + "\n")
             while not self.channel.recv_ready():
                 time.sleep(5)
