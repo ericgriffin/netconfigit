@@ -3,12 +3,6 @@
 Netconfigit H3C device class
 """
 
-__license__ = "MIT License"
-__author__ = "Eric Griffin"
-__copyright__ = "Copyright (C) 2014, Fluent Trade Technologies"
-__version__ = "1.1"
-
-
 import logging
 import os
 import time

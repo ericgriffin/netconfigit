@@ -5,12 +5,6 @@ AESCrypt class
 Encrypts and decrypts data with AES encryption
 """
 
-__license__ = "MIT License"
-__author__ = "Eric Griffin"
-__copyright__ = "Copyright (C) 2014, Fluent Trade Technologies"
-__version__ = "1.1"
-
-
 import os
 import base64
 from Crypto.Cipher import AES

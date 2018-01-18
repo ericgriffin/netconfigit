@@ -1,8 +1,5 @@
 Netconfigit is released under the MIT license except as otherwise noted.
 
-Netconfigit is developed and maintained by Fluent Trade Technologies.
-
-
 Netconfigit is an extensible tool for performing configuration backups on a wide range of network devices. Configurations are pulled from devices through several available methods and committed to a GIT repository. Netconfigit reads an XML configuration file which describes among other things, the GIT repository, the network devices and their access credentials, and the actions to be performed on each device. 
 
 
